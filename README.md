@@ -12,7 +12,7 @@ It includes:
 
 ---
 
-## Project summary (what a reviewer should look at)
+## Project summary 
 
 ### Experiment 1 — Grating period, three independent methods
 We estimate the grating period \(d\) using:
@@ -84,8 +84,4 @@ docs/            (optional) extra writeups
 
 ---
 
-## Notes on images / permissions
 
-The report figures come from **course-provided materials** (Thorlabs EDU-FOP2 manual and lab-provided images).
-If you plan to make this repository **public**, ensure you have permission to redistribute those images,
-or replace them with your own photos/diagrams.
