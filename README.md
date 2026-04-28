@@ -2,13 +2,11 @@
 
 This repository turns a 4f microscope lab into a reproducible Python analysis project. Starting from raw CSV measurements, it reproduces the report numbers, propagates uncertainties analytically, exports machine-readable results, and generates figures that GitHub can render directly.
 
-## What This Demonstrates
+## Project Overview
 
 This project is a compact example of reproducible model comparison. It evaluates three
 measurement routes, carries uncertainty through each chain, exports structured outputs,
-and makes the figures inspectable without opening the report. That structure is useful
-beyond physics: it is the same pattern I use for comparing model outputs, scoring
-rules, and measurement definitions in AI-assisted research.
+and makes the figures inspectable without opening the report.
 
 ## At a Glance
 
@@ -18,8 +16,8 @@ rules, and measurement definitions in AI-assisted research.
   propagation, and systematic-vs-random error discussion.
 - **Reproducibility signal:** the analysis can be rerun from a single script or Makefile
   target and produces GitHub-renderable artifacts.
-- **Transferable skill:** the project shows how I compare alternative measurement
-  definitions, which maps naturally to benchmark scoring and model-evaluation design.
+The project keeps alternative measurement definitions visible rather than collapsing
+everything into one final reported value.
 
 ## What this repo shows
 
@@ -45,9 +43,13 @@ Additional quantitative result:
 
 - Abbe-limit estimate: `dx_min ~= 3.96 um`, consistent with resolving the `6 um` feature more clearly than the `4 um` feature.
 
-## Analysis outputs
+## Research snapshot
 
 The repository is set up so the core analysis is visible without opening the PDF first.
+
+<img src="analysis/output/research_snapshot.png" alt="Fourier optics research snapshot" width="860">
+
+## Analysis outputs
 
 **Screen-angle regression**
 
