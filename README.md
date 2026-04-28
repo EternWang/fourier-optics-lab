@@ -16,6 +16,7 @@ and makes the figures inspectable without opening the report.
   propagation, and systematic-vs-random error discussion.
 - **Reproducibility signal:** the analysis can be rerun from a single script or Makefile
   target and produces GitHub-renderable artifacts.
+
 The project keeps alternative measurement definitions visible rather than collapsing
 everything into one final reported value.
 
