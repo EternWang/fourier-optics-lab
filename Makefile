@@ -1,7 +1,12 @@
-.PHONY: analysis report clean
+.PHONY: all analysis test report clean
+
+all: analysis
 
 analysis:
 	python analysis/analyze.py
+
+test:
+	python -m unittest discover -s tests
 
 report:
 	cd report && pdflatex -interaction=nonstopmode main.tex && pdflatex -interaction=nonstopmode main.tex
