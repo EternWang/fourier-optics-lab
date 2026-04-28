@@ -25,6 +25,11 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA_RAW = ROOT / "data" / "raw"
 DATA_PROCESSED = ROOT / "data" / "processed"
 OUT = ROOT / "analysis" / "output"
+BLUE = "#2F6B9A"
+ORANGE = "#D97935"
+GREEN = "#5B8C5A"
+GRAY = "#4A5568"
+LIGHT = "#EEF2F6"
 
 
 @dataclass
@@ -64,6 +69,32 @@ class AbbeResult:
 def ensure_dirs() -> None:
     DATA_PROCESSED.mkdir(parents=True, exist_ok=True)
     OUT.mkdir(parents=True, exist_ok=True)
+
+
+def set_plot_style() -> None:
+    plt.rcParams.update(
+        {
+            "figure.dpi": 140,
+            "savefig.dpi": 240,
+            "font.family": "DejaVu Sans",
+            "font.size": 10.5,
+            "axes.titlesize": 14,
+            "axes.labelsize": 11,
+            "axes.spines.top": False,
+            "axes.spines.right": False,
+            "axes.grid": True,
+            "grid.color": "#D9DEE7",
+            "grid.linewidth": 0.8,
+            "grid.alpha": 0.75,
+            "legend.frameon": False,
+        }
+    )
+
+
+def save_figure(fig: plt.Figure, path: Path) -> None:
+    fig.tight_layout()
+    fig.savefig(path, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
 
 
 def through_origin_regression(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float]:
@@ -175,90 +206,115 @@ def abbe_limit(lam_nm: float = 550.0) -> AbbeResult:
 
 
 def plot_screen_fit(screen: ScreenFitResult) -> None:
+    set_plot_style()
     df = pd.read_csv(DATA_RAW / "screen_angle.csv")
     L = df["L_cm"].to_numpy(dtype=float)
     y = df["y_cm"].to_numpy(dtype=float)
+    xerr = df["sigma_L_cm"].to_numpy(dtype=float)
+    yerr = df["sigma_y_cm"].to_numpy(dtype=float)
 
     L_line = np.linspace(0, L.max() * 1.05, 200)
     y_line = screen.slope_m * L_line
 
-    plt.figure()
-    plt.scatter(L, y, label="measured")
-    plt.plot(L_line, y_line, label=f"fit: y = {screen.slope_m:.5f} L")
-    plt.xlabel("Screen distance L (cm)")
-    plt.ylabel("Order separation y (cm)")
-    plt.title("Screen-angle method: y vs L")
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(OUT / "screen_fit.png", dpi=200)
-    plt.close()
+    fig, ax = plt.subplots(figsize=(7.2, 4.8))
+    ax.errorbar(
+        L,
+        y,
+        xerr=xerr,
+        yerr=yerr,
+        fmt="o",
+        ms=6,
+        color=BLUE,
+        ecolor="#7FA7C7",
+        capsize=3,
+        label="Measured separation",
+    )
+    ax.plot(L_line, y_line, color=ORANGE, lw=2.4, label=f"Through-origin fit: y = {screen.slope_m:.4f} L")
+    ax.set_xlabel("Screen distance L (cm)")
+    ax.set_ylabel("First-order separation y (cm)")
+    ax.set_title("Screen-angle regression")
+    ax.text(
+        0.03,
+        0.95,
+        f"Estimated grating period\n"
+        f"d = {screen.d_um:.2f} +/- {screen.d_sigma_um:.2f} um\n"
+        f"R^2 = {screen.r2:.3f}",
+        transform=ax.transAxes,
+        ha="left",
+        va="top",
+        bbox={"boxstyle": "round,pad=0.35", "facecolor": LIGHT, "edgecolor": "#CBD5E1"},
+    )
+    ax.legend(loc="lower right")
+    save_figure(fig, OUT / "screen_fit.png")
 
-    plt.figure()
+    fig, ax = plt.subplots(figsize=(7.2, 3.3))
     residuals = y - screen.slope_m * L
-    plt.axhline(0, linewidth=1)
-    plt.scatter(L, residuals)
-    plt.xlabel("Screen distance L (cm)")
-    plt.ylabel("Residual y - mL (cm)")
-    plt.title("Screen-angle method: residuals")
-    plt.tight_layout()
-    plt.savefig(OUT / "screen_residuals.png", dpi=200)
-    plt.close()
+    ax.axhline(0, color=GRAY, linewidth=1)
+    ax.errorbar(L, residuals, yerr=yerr, fmt="o", ms=5, color=BLUE, ecolor="#7FA7C7", capsize=3)
+    ax.set_xlabel("Screen distance L (cm)")
+    ax.set_ylabel("Residual y - mL (cm)")
+    ax.set_title("Residual diagnostics")
+    save_figure(fig, OUT / "screen_residuals.png")
 
 
 def plot_uncertainty_budget(screen: ScreenFitResult, cam: CameraResult, slit: SlitResult) -> None:
+    set_plot_style()
     methods = ["screen", "camera", "slit (random)"]
     sigmas = [screen.d_sigma_um, cam.d_sigma_um, slit.d_sigma_um]
 
-    plt.figure()
-    plt.bar(methods, sigmas, color=["#4C78A8", "#54A24B", "#E45756"])
-    plt.ylabel("Random uncertainty sigma_d (um)")
-    plt.title("Experiment 1: random uncertainty comparison")
-    plt.tight_layout()
-    plt.savefig(OUT / "random_uncertainty_budget.png", dpi=200)
-    plt.close()
+    fig, ax = plt.subplots(figsize=(6.6, 3.8))
+    bars = ax.bar(methods, sigmas, color=[BLUE, GREEN, ORANGE], width=0.62)
+    ax.set_ylabel("Random uncertainty in d (um)")
+    ax.set_title("Random uncertainty by measurement route")
+    for bar, value in zip(bars, sigmas):
+        ax.text(bar.get_x() + bar.get_width() / 2, value + 0.006, f"{value:.3f}", ha="center", va="bottom")
+    save_figure(fig, OUT / "random_uncertainty_budget.png")
 
 
 def plot_grating_method_comparison(
     screen: ScreenFitResult, cam: CameraResult, slit: SlitResult
 ) -> None:
+    set_plot_style()
     methods = ["Screen angle", "Camera calibration", "Slit cutoff"]
     estimates = np.array([screen.d_um, cam.d_um, slit.d_um], dtype=float)
     sigmas = np.array([screen.d_sigma_um, cam.d_sigma_um, slit.d_sigma_um], dtype=float)
     ypos = np.arange(len(methods))
 
-    plt.figure(figsize=(7.2, 3.8))
-    plt.errorbar(
+    fig, ax = plt.subplots(figsize=(7.6, 4.2))
+    ax.axvspan(cam.d_um - cam.d_sigma_um, cam.d_um + cam.d_sigma_um, color=GREEN, alpha=0.12, label="Camera +/- 1 sigma")
+    ax.errorbar(
         estimates,
         ypos,
         xerr=sigmas,
         fmt="o",
-        color="#1F77B4",
-        ecolor="#1F77B4",
-        capsize=4,
-        markersize=7,
+        color=BLUE,
+        ecolor="#7FA7C7",
+        capsize=5,
+        markersize=8,
     )
-    plt.axvline(
+    ax.axvline(
         cam.d_um,
-        color="#54A24B",
+        color=GREEN,
         linestyle="--",
-        linewidth=1.2,
+        linewidth=1.4,
         label="camera estimate",
     )
-    plt.yticks(ypos, methods)
-    plt.xlabel("Estimated grating period d (um)")
-    plt.title("Experiment 1: independent grating-period estimates")
-    plt.annotate(
-        "slit width is systematic-dominated",
+    ax.set_yticks(ypos, methods)
+    ax.set_xlabel("Estimated grating period d (um)")
+    ax.set_title("Independent grating-period estimates")
+    ax.set_xlim(9.35, 11.05)
+    for x, yv, sigma in zip(estimates, ypos, sigmas):
+        ax.text(x + sigma + 0.035, yv, f"{x:.2f} +/- {sigma:.2f}", va="center", color=GRAY)
+    ax.annotate(
+        "random sigma is small;\nsystematics dominate",
         xy=(slit.d_um + slit.d_sigma_um, ypos[2]),
-        xytext=(11.15, ypos[2] + 0.35),
-        arrowprops={"arrowstyle": "-", "color": "#666666"},
-        fontsize=9,
-        color="#444444",
+        xytext=(10.62, ypos[2] + 0.36),
+        arrowprops={"arrowstyle": "-", "color": GRAY},
+        fontsize=9.5,
+        color=GRAY,
     )
-    plt.legend(loc="lower right")
-    plt.tight_layout()
-    plt.savefig(OUT / "grating_method_comparison.png", dpi=200)
-    plt.close()
+    ax.legend(loc="lower right")
+    save_figure(fig, OUT / "grating_method_comparison.png")
 
 
 def main() -> None:

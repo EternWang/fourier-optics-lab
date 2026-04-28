@@ -51,11 +51,11 @@ The repository is set up so the core analysis is visible without opening the PDF
 
 **Screen-angle regression**
 
-![Screen-angle fit](analysis/output/screen_fit.png)
+<img src="analysis/output/screen_fit.png" alt="Screen-angle regression" width="760">
 
 **Method comparison with propagated uncertainties**
 
-![Grating-method comparison](analysis/output/grating_method_comparison.png)
+<img src="analysis/output/grating_method_comparison.png" alt="Grating-method comparison" width="760">
 
 ## Uncertainty propagation strategy
 
