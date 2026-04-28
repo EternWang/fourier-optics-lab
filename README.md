@@ -43,12 +43,6 @@ Additional quantitative result:
 
 - Abbe-limit estimate: `dx_min ~= 3.96 um`, consistent with resolving the `6 um` feature more clearly than the `4 um` feature.
 
-## Research snapshot
-
-The repository is set up so the core analysis is visible without opening the PDF first.
-
-<img src="analysis/output/research_snapshot.png" alt="Fourier optics research snapshot" width="860">
-
 ## Analysis outputs
 
 **Screen-angle regression**

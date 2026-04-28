@@ -19,7 +19,6 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.patches import FancyBboxPatch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -96,24 +95,6 @@ def save_figure(fig: plt.Figure, path: Path) -> None:
     fig.tight_layout()
     fig.savefig(path, bbox_inches="tight", facecolor="white")
     plt.close(fig)
-
-
-def draw_card(ax: plt.Axes, x: float, y: float, w: float, h: float, title: str, body: str, color: str) -> None:
-    box = FancyBboxPatch(
-        (x, y),
-        w,
-        h,
-        boxstyle="round,pad=0.018,rounding_size=0.025",
-        facecolor="white",
-        edgecolor="#CBD5E1",
-        linewidth=1.0,
-    )
-    ax.add_patch(box)
-    title_y = y + h - 0.075 if body else y + h / 2
-    title_va = "top" if body else "center"
-    ax.text(x + 0.035, title_y, title, ha="left", va=title_va, fontsize=10.2, weight="bold", color=color)
-    if body:
-        ax.text(x + 0.035, y + h - 0.215, body, ha="left", va="top", fontsize=8.45, color="#172033", linespacing=1.18)
 
 
 def through_origin_regression(x: np.ndarray, y: np.ndarray) -> tuple[float, float, float]:
@@ -336,94 +317,6 @@ def plot_grating_method_comparison(
     save_figure(fig, OUT / "grating_method_comparison.png")
 
 
-def plot_research_snapshot(screen: ScreenFitResult, cam: CameraResult, slit: SlitResult, abbe: AbbeResult) -> None:
-    set_plot_style()
-    fig = plt.figure(figsize=(11.2, 5.5), facecolor="white")
-    grid = fig.add_gridspec(2, 3, height_ratios=[0.92, 1.08], width_ratios=[1.0, 1.08, 0.92])
-
-    ax_cards = fig.add_subplot(grid[0, :])
-    ax_cards.axis("off")
-    ax_cards.set_xlim(0, 1)
-    ax_cards.set_ylim(0, 1)
-    fig.suptitle("Fourier optics analysis workflow", x=0.04, y=0.985, ha="left", fontsize=17, weight="bold", color="#172033")
-    fig.text(
-        0.04,
-        0.925,
-        "Three independent measurement routes with structured uncertainty propagation and method comparison.",
-        ha="left",
-        fontsize=10.5,
-        color=GRAY,
-    )
-
-    draw_card(
-        ax_cards,
-        0.02,
-        0.08,
-        0.28,
-        0.68,
-        "Screen-angle route",
-        f"d = {screen.d_um:.2f} +/- {screen.d_sigma_um:.2f} um\n"
-        f"through-origin R^2 = {screen.r2:.3f}\n"
-        "diffraction spacing vs distance",
-        BLUE,
-    )
-    draw_card(
-        ax_cards,
-        0.36,
-        0.08,
-        0.28,
-        0.68,
-        "Camera route",
-        f"d = {cam.d_um:.2f} +/- {cam.d_sigma_um:.2f} um\n"
-        f"scale = {cam.s_um_per_px:.3f} um/px\n"
-        "calibrated object-plane pixels",
-        GREEN,
-    )
-    draw_card(
-        ax_cards,
-        0.70,
-        0.08,
-        0.28,
-        0.68,
-        "Slit-cutoff route",
-        f"d = {slit.d_um:.2f} +/- {slit.d_sigma_um:.2f} um\n"
-        f"Abbe dx_min ~= {abbe.dx_min_um:.2f} um\n"
-        "random error reported\nsystematics discussed",
-        ORANGE,
-    )
-
-    ax_compare = fig.add_subplot(grid[1, :2])
-    labels = ["Screen angle", "Camera calibration", "Slit cutoff"]
-    estimates = np.array([screen.d_um, cam.d_um, slit.d_um], dtype=float)
-    sigmas = np.array([screen.d_sigma_um, cam.d_sigma_um, slit.d_sigma_um], dtype=float)
-    ypos = np.arange(len(labels))
-    ax_compare.errorbar(estimates, ypos, xerr=sigmas, fmt="o", color=BLUE, ecolor="#7FA7C7", capsize=5, ms=8)
-    ax_compare.axvline(cam.d_um, color=GREEN, ls="--", lw=1.5, label="camera estimate")
-    ax_compare.set_yticks(ypos, labels)
-    ax_compare.set_xlabel("Estimated grating period d (um)")
-    ax_compare.set_title("Independent grating-period estimates", weight="bold", loc="left")
-    ax_compare.set_xlim(9.35, 11.05)
-    for x, y, sigma in zip(estimates, ypos, sigmas):
-        ax_compare.text(x + sigma + 0.04, y, f"{x:.2f} +/- {sigma:.2f}", va="center", color=GRAY, fontsize=9.5)
-    ax_compare.legend(loc="lower right")
-
-    ax_flow = fig.add_subplot(grid[1, 2])
-    ax_flow.axis("off")
-    ax_flow.set_xlim(0, 1)
-    ax_flow.set_ylim(0, 1)
-    ax_flow.set_title("Artifacts", weight="bold", loc="left", pad=8)
-    steps = ["raw CSV tables", "analytic propagation", "JSON + CSV outputs", "figures + PDF report"]
-    y_positions = [0.82, 0.60, 0.38, 0.16]
-    for idx, (step, y) in enumerate(zip(steps, y_positions)):
-        draw_card(ax_flow, 0.06, y, 0.82, 0.13, f"{idx + 1}. {step}", "", [BLUE, GREEN, ORANGE, GRAY][idx])
-        if idx < len(steps) - 1:
-            ax_flow.annotate("", xy=(0.47, y - 0.015), xytext=(0.47, y - 0.07), arrowprops={"arrowstyle": "->", "color": "#94A3B8"})
-
-    fig.tight_layout(rect=[0.03, 0.02, 0.99, 0.9])
-    fig.savefig(OUT / "research_snapshot.png", bbox_inches="tight", facecolor="white")
-    plt.close(fig)
-
-
 def main() -> None:
     ensure_dirs()
 
@@ -451,7 +344,6 @@ def main() -> None:
     plot_screen_fit(screen)
     plot_uncertainty_budget(screen, cam, slit)
     plot_grating_method_comparison(screen, cam, slit)
-    plot_research_snapshot(screen, cam, slit, abbe)
 
     print("=== Fourier Optics Lab: Reproduced results ===")
     print(f"Screen-angle: d = {screen.d_um:.2f} +/- {screen.d_sigma_um:.2f} um (random), R^2 = {screen.r2:.3f}")
